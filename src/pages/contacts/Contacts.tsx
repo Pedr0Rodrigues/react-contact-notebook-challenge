@@ -26,6 +26,8 @@ export default function Contacts() {
     email: "",
   });
 
+  const [sortOption, setSortOption] = useState("Alfabética"); // Estado para rastrear a opção de ordenamento
+
   const [errorAlert, setErrorAlert] = useState("");
 
   const addContact = useMutation(
@@ -39,7 +41,7 @@ export default function Contacts() {
       }),
     {
       onSuccess: () => {
-        refetch(); // Atualiza a lista de contatos após adicionar um novo
+        refetch();
         setNewContact({
           name: "",
           phone: "",
@@ -58,7 +60,6 @@ export default function Contacts() {
   };
 
   const handleAddContact = async () => {
-    // Validação dos campos
     if (newContact.name.trim() === "") {
       setErrorAlert("Por favor, preencha o campo Nome.");
       return;
@@ -76,10 +77,32 @@ export default function Contacts() {
 
     try {
       await addContact.mutateAsync(newContact);
-      setErrorAlert(""); // Limpa a mensagem de erro após adicionar com sucesso
+      setErrorAlert("");
     } catch (error) {
       console.error("Erro ao adicionar contato:", error);
     }
+  };
+
+  // Função para alternar a opção de ordenamento
+  const toggleSortOption = () => {
+    if (sortOption === "Alfabética") {
+      setSortOption("em Pilha");
+    } else if (sortOption === "em Pilha") {
+      setSortOption("em Fila");
+    } else {
+      setSortOption("Alfabética");
+    }
+  };
+
+  // Função para ordenar a lista de contatos com base na opção atual
+  const sortedContacts = () => {
+    let sortedList = [...contacts];
+    if (sortOption === "Alfabética") {
+      sortedList = sortedList.sort((a, b) => a.name.localeCompare(b.name));
+    } else if (sortOption === "em Pilha") {
+      sortedList = sortedList.reverse();
+    }
+    return sortedList;
   };
 
   if (isFetching) {
@@ -93,8 +116,14 @@ export default function Contacts() {
   return (
     <div>
       <h1>Contatos</h1>
+
+      {/* Botões para alternar a opção de ordenamento */}
+      <div className="sort-buttons">
+        <button onClick={toggleSortOption}>Ordenação {sortOption}</button>
+      </div>
+
       <div className="contacts">
-        {contacts.map((contact: Contact) => (
+        {sortedContacts().map((contact: Contact) => (
           <ContactCard
             key={contact.id}
             name={contact.name}
