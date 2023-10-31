@@ -59,6 +59,7 @@ export default function Contacts() {
           email: "",
         });
         setErrorAlert("Contato adicionado com sucesso.");
+        window.location.href = "#add-contact";
       },
       onError: (error, variables, context) => {
         const previousContacts = context.previousContacts;
@@ -105,6 +106,7 @@ export default function Contacts() {
 
     setEditingContact(contactToEdit);
     setIsEditing(true);
+    window.location.href = "#add-contact";
   };
 
   const handleAddContact = async () => {
@@ -252,6 +254,7 @@ export default function Contacts() {
             setNewContact({ ...newContact, email: e.target.value })
           }
         />
+        <a name="add-contact"></a>
         <button onClick={handleAddContact}>
           {isEditing ? "Editar Contato" : "Adicionar Contato"}
         </button>
