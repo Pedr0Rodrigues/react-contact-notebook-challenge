@@ -26,7 +26,10 @@ export default function Contacts() {
     email: "",
   });
 
-  const [sortOption, setSortOption] = useState("Alfabética"); // Estado para rastrear a opção de ordenamento
+  const [editingContact, setEditingContact] = useState(null); 
+  const [isEditing, setIsEditing] = useState(false);
+
+  const [sortOption, setSortOption] = useState("Alfabética");
 
   const [errorAlert, setErrorAlert] = useState("");
 
@@ -40,6 +43,14 @@ export default function Contacts() {
         body: JSON.stringify(newContact),
       }),
     {
+      onMutate: async (newContact) => {
+        const previousContacts = [...contacts];
+
+        const updatedContacts = [...previousContacts, newContact];
+        refetch(updatedContacts);
+
+        return { previousContacts };
+      },
       onSuccess: () => {
         refetch();
         setNewContact({
@@ -47,6 +58,13 @@ export default function Contacts() {
           phone: "",
           email: "",
         });
+        setErrorAlert("Contato adicionado com sucesso.");
+      },
+      onError: (error, variables, context) => {
+        const previousContacts = context.previousContacts;
+        refetch(previousContacts);
+
+        setErrorAlert("Erro ao adicionar contato.");
       },
     }
   );
@@ -59,7 +77,7 @@ export default function Contacts() {
     {
       onMutate: async (id) => {
         const previousContacts = [...contacts];
-  
+
         const updatedContacts = previousContacts.filter(
           (contact) => contact.id !== id
         );
@@ -67,44 +85,100 @@ export default function Contacts() {
         return { previousContacts };
       },
       onSuccess: () => {
-        refetch(); 
+        refetch();
       },
     }
   );
-  
+
   const handleDeleteContact = (id) => {
     deleteContact.mutate(id);
   };
 
   const handleEditContact = (id) => {
-    // Lógica para edição aqui
+    const contactToEdit = contacts.find((contact) => contact.id === id);
+
+    setNewContact({
+      name: contactToEdit.name,
+      phone: contactToEdit.phone,
+      email: contactToEdit.email,
+    });
+
+    setEditingContact(contactToEdit);
+    setIsEditing(true);
   };
 
   const handleAddContact = async () => {
-    if (newContact.name.trim() === "") {
-      setErrorAlert("Por favor, preencha o campo Nome.");
-      return;
-    }
+    if (isEditing) {
+      if (newContact.name.trim() === "") {
+        setErrorAlert("Por favor, preencha o campo Nome.");
+        return;
+      }
 
-    if (!newContact.phone.match(/^\+[0-9]{12,}$/)) {
-      setErrorAlert("O campo Telefone deve começar com + e ter no mínimo 12 números.");
-      return;
-    }
+      if (!newContact.phone.match(/^\+[0-9]{12,}$/)) {
+        setErrorAlert(
+          "O campo Telefone deve começar com + e ter no mínimo 12 números."
+        );
+        return;
+      }
 
-    if (!newContact.email.match(/^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/)) {
-      setErrorAlert("O campo Email não possui um formato válido.");
-      return;
-    }
+      if (!newContact.email.match(/^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/)) {
+        setErrorAlert("O campo Email não possui um formato válido.");
+        return;
+      }
 
-    try {
-      await addContact.mutateAsync(newContact);
-      setErrorAlert("");
-    } catch (error) {
-      console.error("Erro ao adicionar contato:", error);
+      try {
+        await fetch(`http://localhost:5000/contacts/${editingContact.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(newContact),
+        });
+        setIsEditing(false);
+        setEditingContact(null);
+        refetch();
+        setErrorAlert("Contato editado com sucesso.");
+      } catch (error) {
+        console.error("Erro ao editar contato:", error);
+        setErrorAlert("Erro ao editar contato.");
+      }
+    } else {
+      if (newContact.name.trim() === "") {
+        setErrorAlert("Por favor, preencha o campo Nome.");
+        return;
+      }
+
+      if (!newContact.phone.match(/^\+[0-9]{12,}$/)) {
+        setErrorAlert(
+          "O campo Telefone deve começar com + e ter no mínimo 12 números."
+        );
+        return;
+      }
+
+      if (!newContact.email.match(/^[\w-]+(\.[\w-]+)*@[\w-]+(\.[\w-]+)+$/)) {
+        setErrorAlert("O campo Email não possui um formato válido.");
+        return;
+      }
+
+      try {
+        const response = await addContact.mutateAsync(newContact);
+        if (response.status === "success") {
+          setErrorAlert("Contato adicionado com sucesso.");
+        } else {
+          setErrorAlert("Erro ao adicionar contato.");
+        }
+      } catch (error) {
+        console.error("Erro ao adicionar contato:", error);
+        setErrorAlert("Erro ao adicionar contato.");
+      }
     }
+    setNewContact({
+      name: "",
+      phone: "",
+      email: "",
+    });
   };
 
-  // Função para alternar a opção de ordenamento
   const toggleSortOption = () => {
     if (sortOption === "Alfabética") {
       setSortOption("em Pilha");
@@ -115,7 +189,6 @@ export default function Contacts() {
     }
   };
 
-  // Função para ordenar a lista de contatos com base na opção atual
   const sortedContacts = () => {
     let sortedList = [...contacts];
     if (sortOption === "Alfabética") {
@@ -137,12 +210,9 @@ export default function Contacts() {
   return (
     <div>
       <h1>Contatos</h1>
-
-      {/* Botões para alternar a opção de ordenamento */}
       <div className="sort-buttons">
         <button onClick={toggleSortOption}>Ordenação {sortOption}</button>
       </div>
-
       <div className="contacts">
         {sortedContacts().map((contact: Contact) => (
           <ContactCard
@@ -155,7 +225,6 @@ export default function Contacts() {
           />
         ))}
       </div>
-
       <h2>Adicionar Contato</h2>
       <div className="add-contact">
         {errorAlert && <p className="error-message">{errorAlert}</p>}
@@ -183,7 +252,9 @@ export default function Contacts() {
             setNewContact({ ...newContact, email: e.target.value })
           }
         />
-        <button onClick={handleAddContact}>Adicionar Contato</button>
+        <button onClick={handleAddContact}>
+          {isEditing ? "Editar Contato" : "Adicionar Contato"}
+        </button>
       </div>
     </div>
   );
