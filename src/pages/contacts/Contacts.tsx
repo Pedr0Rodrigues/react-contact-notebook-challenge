@@ -51,8 +51,29 @@ export default function Contacts() {
     }
   );
 
+  const deleteContact = useMutation(
+    (id) =>
+      fetch(`http://localhost:5000/contacts/${id}`, {
+        method: "DELETE",
+      }),
+    {
+      onMutate: async (id) => {
+        const previousContacts = [...contacts];
+  
+        const updatedContacts = previousContacts.filter(
+          (contact) => contact.id !== id
+        );
+        refetch(updatedContacts);
+        return { previousContacts };
+      },
+      onSuccess: () => {
+        refetch(); 
+      },
+    }
+  );
+  
   const handleDeleteContact = (id) => {
-    // Lógica para deleção aqui
+    deleteContact.mutate(id);
   };
 
   const handleEditContact = (id) => {
