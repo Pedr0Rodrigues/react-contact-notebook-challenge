@@ -1,8 +1,10 @@
 import React, { useState } from "react";
 import AppError from "../../components/AppError/Error";
 import ContactCard from "../../components/ContactCard/ContactCard";
+import ContactModal from "../../components/ContactModal/ContactModal";
 import Loading from "../../components/Loading/Loading";
 import { Contact } from "../../types/Contact";
+import Modal from 'react-modal';
 import "./Contacts.css";
 import { useQuery, useMutation } from "react-query";
 
@@ -58,8 +60,8 @@ export default function Contacts() {
           phone: "",
           email: "",
         });
-        setErrorAlert("Contato adicionado com sucesso.");
-        window.location.href = "#add-contact";
+        setErrorAlert("");
+        closeModal();
       },
       onError: (error, variables, context) => {
         const previousContacts = context.previousContacts;
@@ -106,7 +108,7 @@ export default function Contacts() {
 
     setEditingContact(contactToEdit);
     setIsEditing(true);
-    window.location.href = "#add-contact";
+    openModal(); 
   };
 
   const handleAddContact = async () => {
@@ -139,9 +141,9 @@ export default function Contacts() {
         setIsEditing(false);
         setEditingContact(null);
         refetch();
-        setErrorAlert("Contato editado com sucesso.");
+        setErrorAlert("");
+        closeModal(); 
       } catch (error) {
-        console.error("Erro ao editar contato:", error);
         setErrorAlert("Erro ao editar contato.");
       }
     } else {
@@ -165,9 +167,10 @@ export default function Contacts() {
       try {
         const response = await addContact.mutateAsync(newContact);
         if (response.status === "success") {
-          setErrorAlert("Contato adicionado com sucesso.");
+          setErrorAlert("");
+          closeModal(); 
         } else {
-          setErrorAlert("Erro ao adicionar contato.");
+          setErrorAlert("");
         }
       } catch (error) {
         console.error("Erro ao adicionar contato:", error);
@@ -201,6 +204,16 @@ export default function Contacts() {
     return sortedList;
   };
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const openModal = () => {
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
   if (isFetching) {
     return <Loading />;
   }
@@ -214,6 +227,8 @@ export default function Contacts() {
       <h1>Contatos</h1>
       <div className="sort-buttons">
         <button onClick={toggleSortOption}>Ordenação {sortOption}</button>
+        <br/>
+        <button onClick={openModal}>Adicionar Contato</button>
       </div>
       <div className="contacts">
         {sortedContacts().map((contact: Contact) => (
@@ -223,42 +238,25 @@ export default function Contacts() {
             email={contact.email}
             phone={contact.phone}
             handleDelete={() => handleDeleteContact(contact.id)}
-            handleEdit={() => handleEditContact(contact.id)}
+            handleEdit={() => {
+              handleEditContact(contact.id);
+              openModal();
+            }}
           />
         ))}
       </div>
-      <h2>Adicionar Contato</h2>
-      <div className="add-contact">
-        {errorAlert && <p className="error-message">{errorAlert}</p>}
-        <input
-          type="text"
-          placeholder="Nome"
-          value={newContact.name}
-          onChange={(e) =>
-            setNewContact({ ...newContact, name: e.target.value })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Telefone"
-          value={newContact.phone}
-          onChange={(e) =>
-            setNewContact({ ...newContact, phone: e.target.value })
-          }
-        />
-        <input
-          type="text"
-          placeholder="Email"
-          value={newContact.email}
-          onChange={(e) =>
-            setNewContact({ ...newContact, email: e.target.value })
-          }
-        />
-        <a name="add-contact"></a>
-        <button onClick={handleAddContact}>
-          {isEditing ? "Editar Contato" : "Adicionar Contato"}
-        </button>
-      </div>
+
+      <ContactModal
+        isOpen={isModalOpen}
+        onRequestClose={closeModal}
+        isEditing={isEditing}
+        newContact={newContact}
+        handleAddContact={handleAddContact}
+        closeModal={closeModal}
+        errorAlert={errorAlert}
+        setNewContact={setNewContact}
+      />
+
     </div>
   );
 }
