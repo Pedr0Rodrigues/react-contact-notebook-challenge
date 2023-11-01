@@ -29,9 +29,8 @@ export default function Contacts() {
 
   const [editingContact, setEditingContact] = useState(null); 
   const [isEditing, setIsEditing] = useState(false);
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortOption, setSortOption] = useState("Alfabética");
-
   const [errorAlert, setErrorAlert] = useState("");
 
   const addContact = useMutation(
@@ -202,8 +201,6 @@ export default function Contacts() {
     }
     return sortedList;
   };
-
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const openModal = () => {
     setIsModalOpen(true);
