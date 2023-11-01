@@ -1,10 +1,8 @@
-import React from "react";
 import Modal from "react-modal";
 import "./ContactModal.css";
 
 export default function ContactModal({
   isOpen,
-  onRequestClose,
   isEditing,
   newContact,
   handleAddContact,

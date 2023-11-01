@@ -1,10 +1,9 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import AppError from "../../components/AppError/Error";
 import ContactCard from "../../components/ContactCard/ContactCard";
 import ContactModal from "../../components/ContactModal/ContactModal";
 import Loading from "../../components/Loading/Loading";
 import { Contact } from "../../types/Contact";
-import Modal from 'react-modal';
 import "./Contacts.css";
 import { useQuery, useMutation } from "react-query";
 
